@@ -11,7 +11,7 @@ const compiled = ts.transpileModule(source, {
   compilerOptions: { module: ts.ModuleKind.CommonJS },
 }).outputText
 const serverModule = {}
-vm.runInNewContext(compiled, { exports: serverModule, require, URL })
+vm.runInNewContext(compiled, { exports: serverModule, require, URL, URLSearchParams, Buffer })
 const { mockAuthServer } = serverModule
 
 test('mock server supports local sessions and rejects cross-origin requests', async (t) => {
@@ -31,11 +31,34 @@ test('mock server supports local sessions and rejects cross-origin requests', as
   })
   assert.equal(forbidden.status, 403)
 
-  const login = await fetch(`${origin}/__mock_auth/login`, {
+  const formPage = await fetch(`${origin}/__mock_auth/login?returnTo=%2F%3Fview%3Done%23section`)
+  assert.match(await formPage.text(), /name="username".*name="password"/s)
+
+  for (const [username, password] of [['', ''], ['demo', 'wrong'], ['wrong', 'demo-password']]) {
+    const invalid = await fetch(`${origin}/__mock_auth/login`, {
+      method: 'POST',
+      headers: { origin },
+      body: new URLSearchParams({ username, password }),
+    })
+    assert.equal(invalid.status, 401)
+    assert.match(await invalid.text(), /Invalid username or password/)
+    assert.equal(invalid.headers.get('set-cookie'), null)
+  }
+  const oversized = await fetch(`${origin}/__mock_auth/login`, {
     method: 'POST',
     headers: { origin },
+    body: new URLSearchParams({ username: 'x'.repeat(5000), password: 'x' }),
   })
-  assert.equal((await login.json()).user.name, 'Mock User')
+  assert.equal(oversized.status, 413)
+
+  const login = await fetch(`${origin}/__mock_auth/login?returnTo=%2F%3Fview%3Done%23section`, {
+    method: 'POST',
+    headers: { origin },
+    body: new URLSearchParams({ username: 'demo', password: 'demo-password' }),
+    redirect: 'manual',
+  })
+  assert.equal(login.status, 303)
+  assert.equal(login.headers.get('location'), '/?view=one#section')
   const cookie = login.headers.get('set-cookie').split(';')[0]
   assert.match(login.headers.get('set-cookie'), /HttpOnly; SameSite=Strict/)
 
@@ -49,6 +72,14 @@ test('mock server supports local sessions and rejects cross-origin requests', as
   assert.equal((await logout.json()).user, null)
   const afterLogout = await fetch(`${origin}/__mock_auth/session`, { headers: { cookie } })
   assert.equal((await afterLogout.json()).user, null)
+
+  const externalRedirect = await fetch(`${origin}/__mock_auth/login?returnTo=%2F%2Fevil.example`, {
+    method: 'POST',
+    headers: { origin },
+    body: new URLSearchParams({ username: 'demo', password: 'demo-password' }),
+    redirect: 'manual',
+  })
+  assert.equal(externalRedirect.headers.get('location'), '/')
 
   const otherHostStatus = await new Promise((resolve, reject) => {
     const req = request(`${origin}/__mock_auth/session`, { headers: { host: 'evil.example' } }, (res) => {

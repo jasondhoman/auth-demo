@@ -33,8 +33,8 @@ export default function MockAuthProvider({ children }: { children: ReactNode }) 
   }, [])
 
   async function loginWithRedirect(options?: RedirectLoginOptions) {
-    await requestSession('login', 'POST')
-    window.location.assign(safeReturnTo(options?.appState?.returnTo))
+    const returnTo = safeReturnTo(options?.appState?.returnTo)
+    window.location.assign(`/__mock_auth/login?returnTo=${encodeURIComponent(returnTo)}`)
   }
 
   async function logout() {

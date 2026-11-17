@@ -48,9 +48,9 @@ To try the guarded app without an Auth0 tenant or Active Directory, run:
 VITE_MOCK_AUTH=true npm run dev
 ```
 
-Open the localhost URL printed by Vite. Sign in as the fixed **Mock User** with no password, refresh to retain the session, and sign out to clear it. Sessions are held in memory and disappear when the dev server restarts. Auth0 environment variables are not required in mock mode.
+Open the localhost URL printed by Vite. Sign in with the public test credentials **`demo` / `demo-password`** to become Mock User, refresh to retain the session, and sign out to clear it. These credentials are for local testing only, not secrets or real accounts. Sessions are held in memory and disappear when the dev server restarts. Auth0 environment variables are not required in mock mode.
 
-The mock server is available only in the Vite development server, only when explicitly enabled, and only from localhost. Production builds and the preview server do not enable mock authentication, even if the variable is set. This mock does not issue tokens or test Auth0 redirects, LDAP, credentials, or API authorization; never use it to protect real data.
+The mock server is available only in the Vite development server, only when explicitly enabled, and only from localhost. Production builds and the preview server do not enable mock authentication, even if the variable is set. This mock does not issue tokens or test Auth0 redirects, LDAP, real credentials, or API authorization; never use it to protect real data.
 
 ## Security boundary
 
