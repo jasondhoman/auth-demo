@@ -31,8 +31,8 @@ test('mock server supports local sessions and rejects cross-origin requests', as
   })
   assert.equal(forbidden.status, 403)
 
-  const formPage = await fetch(`${origin}/__mock_auth/login?returnTo=%2F%3Fview%3Done%23section`)
-  assert.match(await formPage.text(), /name="username".*name="password"/s)
+  const formPage = await fetch(`${origin}/__mock_auth/login`)
+  assert.equal(formPage.status, 403)
 
   for (const [username, password] of [['', ''], ['demo', 'wrong'], ['wrong', 'demo-password']]) {
     const invalid = await fetch(`${origin}/__mock_auth/login`, {
@@ -41,7 +41,7 @@ test('mock server supports local sessions and rejects cross-origin requests', as
       body: new URLSearchParams({ username, password }),
     })
     assert.equal(invalid.status, 401)
-    assert.match(await invalid.text(), /Invalid username or password/)
+    assert.equal((await invalid.json()).error, 'Invalid username or password.')
     assert.equal(invalid.headers.get('set-cookie'), null)
   }
   const oversized = await fetch(`${origin}/__mock_auth/login`, {
@@ -51,14 +51,13 @@ test('mock server supports local sessions and rejects cross-origin requests', as
   })
   assert.equal(oversized.status, 413)
 
-  const login = await fetch(`${origin}/__mock_auth/login?returnTo=%2F%3Fview%3Done%23section`, {
+  const login = await fetch(`${origin}/__mock_auth/login`, {
     method: 'POST',
     headers: { origin },
     body: new URLSearchParams({ username: 'demo', password: 'demo-password' }),
-    redirect: 'manual',
   })
-  assert.equal(login.status, 303)
-  assert.equal(login.headers.get('location'), '/?view=one#section')
+  assert.equal(login.status, 200)
+  assert.equal((await login.json()).user.name, 'Mock User')
   const cookie = login.headers.get('set-cookie').split(';')[0]
   assert.match(login.headers.get('set-cookie'), /HttpOnly; SameSite=Strict/)
 
@@ -72,14 +71,6 @@ test('mock server supports local sessions and rejects cross-origin requests', as
   assert.equal((await logout.json()).user, null)
   const afterLogout = await fetch(`${origin}/__mock_auth/session`, { headers: { cookie } })
   assert.equal((await afterLogout.json()).user, null)
-
-  const externalRedirect = await fetch(`${origin}/__mock_auth/login?returnTo=%2F%2Fevil.example`, {
-    method: 'POST',
-    headers: { origin },
-    body: new URLSearchParams({ username: 'demo', password: 'demo-password' }),
-    redirect: 'manual',
-  })
-  assert.equal(externalRedirect.headers.get('location'), '/')
 
   const otherHostStatus = await new Promise((resolve, reject) => {
     const req = request(`${origin}/__mock_auth/session`, { headers: { host: 'evil.example' } }, (res) => {

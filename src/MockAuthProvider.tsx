@@ -1,6 +1,5 @@
-import { Auth0Context, type RedirectLoginOptions } from '@auth0/auth0-react'
+import { Auth0Context } from '@auth0/auth0-react'
 import { useContext, useEffect, useState, type ReactNode } from 'react'
-import { safeReturnTo } from './returnTo'
 
 type MockUser = { sub: string; name: string; email: string }
 
@@ -32,11 +31,6 @@ export default function MockAuthProvider({ children }: { children: ReactNode }) 
     return () => controller.abort()
   }, [])
 
-  async function loginWithRedirect(options?: RedirectLoginOptions) {
-    const returnTo = safeReturnTo(options?.appState?.returnTo)
-    window.location.assign(`/__mock_auth/login?returnTo=${encodeURIComponent(returnTo)}`)
-  }
-
   async function logout() {
     await requestSession('logout', 'POST')
     window.location.assign('/')
@@ -49,7 +43,6 @@ export default function MockAuthProvider({ children }: { children: ReactNode }) 
       isAuthenticated: !!user,
       user: user ?? undefined,
       error,
-      loginWithRedirect,
       logout,
     }}>
       {children}

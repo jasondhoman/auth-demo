@@ -1,7 +1,9 @@
 import { useAuth0 } from '@auth0/auth0-react'
 import { Outlet } from '@tanstack/react-router'
-import { useState } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import { safeReturnTo } from './returnTo'
+
+const MockLoginForm = import.meta.env.DEV ? lazy(() => import('./MockLoginForm')) : null
 
 export function Login({ returnTo, connection }: { returnTo: unknown; connection: string }) {
   const { error, loginWithRedirect } = useAuth0()
@@ -19,12 +21,18 @@ export function Login({ returnTo, connection }: { returnTo: unknown; connection:
     }
   }
 
+  if (import.meta.env.DEV && import.meta.env.VITE_MOCK_AUTH === 'true' && MockLoginForm) {
+    return (
+      <Suspense fallback={<main className="auth" role="status">Loading authentication...</main>}>
+        <MockLoginForm returnTo={returnTo} authError={error} />
+      </Suspense>
+    )
+  }
+
   return (
     <main className="auth">
       <h1>Sign in</h1>
-      <p>{import.meta.env.DEV && import.meta.env.VITE_MOCK_AUTH === 'true'
-        ? 'Development mock authentication is enabled.'
-        : 'Sign in with your Active Directory account to continue.'}</p>
+      <p>Sign in with your Active Directory account to continue.</p>
       {(error || actionError) && <p role="alert">{actionError || error?.message}</p>}
       <button type="button" className="counter" onClick={signIn}>Sign in</button>
     </main>

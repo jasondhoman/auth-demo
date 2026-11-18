@@ -35,14 +35,10 @@ test('return locations preserve local paths but reject external and login URLs',
 test('router waits for authentication before loading routes', () => {
   const { default: AuthRouter } = load('router.tsx', {
     '@auth0/auth0-react': { useAuth0: () => ({ isLoading: true, isAuthenticated: false }) },
-    '@tanstack/react-router': {
-      createRootRouteWithContext: () => () => ({ addChildren: () => ({}) }),
-      createRoute: () => ({ addChildren: () => ({}) }),
-    },
+    '@tanstack/react-router': {},
     react: {},
     'react/jsx-runtime': require('react/jsx-runtime'),
-    './App': { default: () => null },
-    './AuthGate': { Login: () => null, AuthenticatedLayout: () => null },
+    './routeTree.gen': { routeTree: {} },
   })
   const loading = AuthRouter()
   assert.equal(loading.props.role, 'status')
@@ -50,24 +46,14 @@ test('router waits for authentication before loading routes', () => {
 })
 
 test('protected route guard redirects signed-out users and allows signed-in users', () => {
-  const routes = []
-  const makeRoute = (options = {}) => ({
-    ...options,
-    addChildren(children) { this.children = children; return this },
-  })
-  load('router.tsx', {
-    '@auth0/auth0-react': { useAuth0: () => ({}) },
+  const { Route } = load('routes/_authenticated.tsx', {
     '@tanstack/react-router': {
-      createRootRouteWithContext: () => () => makeRoute(),
-      createRoute: (options) => { const route = makeRoute(options); routes.push(route); return route },
+      createFileRoute: () => (options) => options,
       redirect: (options) => options,
     },
-    react: {},
-    'react/jsx-runtime': require('react/jsx-runtime'),
-    './App': { default: () => null },
-    './AuthGate': { Login: () => null, AuthenticatedLayout: () => null },
+    '../AuthGate': { AuthenticatedLayout: () => null },
   })
-  const guard = routes.find((route) => route.id === 'authenticated').beforeLoad
+  const guard = Route.beforeLoad
   const location = { href: '/?view=one#section' }
   assert.throws(() => guard({ context: { isAuthenticated: false }, location }), (result) => {
     assert.equal(result.to, '/login')

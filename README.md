@@ -38,7 +38,7 @@ Run `pnpm test`, `pnpm build`, and `pnpm lint` for local checks. A complete logi
 
 ## Routes
 
-TanStack Router uses a public `/login` route and a pathless authenticated layout in `src/router.tsx`. Add protected pages as children of `authenticatedRoute`; its `beforeLoad` guard redirects signed-out visitors to login and returns them to the requested route after authentication. Configure the production host to serve `index.html` for SPA routes.
+TanStack Router generates `src/routeTree.gen.ts` from the route files in `src/routes/` when Vite starts or builds. `/login` is public; `_authenticated.tsx` is a pathless layout whose `beforeLoad` guard redirects signed-out visitors to login and returns them to the requested route after authentication. Add protected pages under the `_authenticated` layout (for example, `_authenticated.settings.tsx`). Configure the production host to serve `index.html` for SPA routes.
 
 ## Local mock authentication
 
@@ -48,7 +48,7 @@ To try the guarded app without an Auth0 tenant or Active Directory, run:
 VITE_MOCK_AUTH=true npm run dev
 ```
 
-Open the localhost URL printed by Vite. Sign in with the public test credentials **`demo` / `demo-password`** to become Mock User, refresh to retain the session, and sign out to clear it. These credentials are for local testing only, not secrets or real accounts. Sessions are held in memory and disappear when the dev server restarts. Auth0 environment variables are not required in mock mode.
+Open the localhost URL printed by Vite. The React mock login form accepts the public test credentials **`demo` / `demo-password`** to sign in as Mock User. Refresh to retain the session, and sign out to clear it. These credentials are for local testing only, not secrets or real accounts. Sessions are held in memory and disappear when the dev server restarts. Auth0 environment variables are not required in mock mode.
 
 The mock server is available only in the Vite development server, only when explicitly enabled, and only from localhost. Production builds and the preview server do not enable mock authentication, even if the variable is set. This mock does not issue tokens or test Auth0 redirects, LDAP, real credentials, or API authorization; never use it to protect real data.
 

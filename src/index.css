@@ -85,6 +85,22 @@ body {
   margin: 0 0 0 16px;
 }
 
+.mock-login,
+.mock-login label {
+  display: grid;
+  gap: 8px;
+}
+
+.mock-login {
+  gap: 16px;
+  text-align: left;
+}
+
+.mock-login input {
+  font: inherit;
+  padding: 6px;
+}
+
 h1,
 h2 {
   font-family: var(--heading);

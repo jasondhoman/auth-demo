@@ -6,13 +6,6 @@ const user = { sub: 'mock|developer', name: 'Mock User', email: 'mock@example.te
 const mockUsername = 'demo'
 const mockPassword = 'demo-password'
 
-function returnTo(value: string | null, origin: string): string {
-  if (!value?.startsWith('/') || value.startsWith('//') || value.startsWith('/\\')) return '/'
-  const url = new URL(value, origin)
-  if (url.origin !== origin || url.pathname === '/login' || url.pathname.startsWith('/__mock_auth/')) return '/'
-  return url.pathname + url.search + url.hash
-}
-
 export function mockAuthServer(): Plugin {
   const sessions = new Set<string>()
 
@@ -36,36 +29,16 @@ export function mockAuthServer(): Plugin {
     }
 
     const url = new URL(req.url, `http://${host}`)
-    const destination = returnTo(url.searchParams.get('returnTo'), url.origin)
     const token = req.headers.cookie?.split('; ')
       .find((cookie) => cookie.startsWith('mock_auth='))?.slice('mock_auth='.length)
-    const send = (body: object) => {
+    const send = (body: object, status = 200) => {
       res.setHeader('Content-Type', 'application/json')
+      res.statusCode = status
       res.end(JSON.stringify(body))
     }
 
     if (req.method === 'GET' && url.pathname === '/__mock_auth/session') {
       send({ user: token && sessions.has(token) ? user : null })
-      return
-    }
-    const loginForm = (invalid = false) => {
-      res.setHeader('Content-Type', 'text/html; charset=utf-8')
-      res.setHeader('Content-Security-Policy', "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'")
-      res.statusCode = invalid ? 401 : 200
-      res.end(`<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Mock sign in</title>
-<style>body{font:18px system-ui;max-width:24rem;margin:10vh auto;padding:1rem}form,label{display:grid;gap:.5rem}form{gap:1rem}input,button{font:inherit;padding:.5rem}</style>
-</head><body><main><h1>Mock sign in</h1><p>Development only</p>
-${invalid ? '<p role="alert">Invalid username or password.</p>' : ''}
-<form action="/__mock_auth/login?returnTo=${encodeURIComponent(destination)}" method="post">
-<label>Username<input name="username" autocomplete="username" required></label>
-<label>Password<input name="password" type="password" autocomplete="current-password" required></label>
-<button type="submit">Sign in</button></form></main></body></html>`)
-    }
-
-    if (req.method === 'GET' && url.pathname === '/__mock_auth/login') {
-      loginForm()
       return
     }
     if (req.method === 'POST' && req.headers.origin === `http://${host}`) {
@@ -89,14 +62,14 @@ ${invalid ? '<p role="alert">Invalid username or password.</p>' : ''}
           if (tooLarge) return
           const form = new URLSearchParams(body)
           if (form.get('username') !== mockUsername || form.get('password') !== mockPassword) {
-            loginForm(true)
+            send({ error: 'Invalid username or password.' }, 401)
             return
           }
           if (token) sessions.delete(token)
           const session = randomBytes(32).toString('hex')
           sessions.add(session)
           res.setHeader('Set-Cookie', `mock_auth=${session}; HttpOnly; SameSite=Strict; Path=/`)
-          res.writeHead(303, { Location: destination }).end()
+          send({ user })
         })
         req.on('error', () => {
           if (!res.headersSent) res.writeHead(400).end('Could not read form data')
