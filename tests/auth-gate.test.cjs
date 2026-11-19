@@ -28,7 +28,7 @@ function render(auth, component = 'Login', props = {}) {
   const exports = {}
   const dependencies = {
     '@auth0/auth0-react': { useAuth0: () => auth },
-    '@tanstack/react-router': { Outlet: () => null },
+    '@tanstack/react-router': { Link: () => null, Outlet: () => null },
     react: { useState: () => [undefined, (value) => { actionError = value }] },
     'react/jsx-runtime': require('react/jsx-runtime'),
     './returnTo': returnToExports,
@@ -61,6 +61,8 @@ function find(element, predicate) {
 test('signed-out layout hides content and login displays authentication errors', () => {
   const signedOut = render({ isAuthenticated: false }, 'AuthenticatedLayout').tree
   assert.equal(signedOut, null)
+  const header = render({ isAuthenticated: false }, 'AuthenticationHeader').tree
+  assert.equal(find(header, (node) => node.props?.children === 'Sign in').props.to, '/login')
 
   const failed = render({ isAuthenticated: false, error: new Error('Access denied') }).tree
   assert.equal(find(failed, (node) => node.props?.role === 'alert').props.children, 'Access denied')
@@ -91,7 +93,7 @@ test('authenticated view displays identity and signs out to the app', async () =
     isAuthenticated: true,
     user: { name: 'Directory User' },
     logout: async (value) => { options = value },
-  }, 'AuthenticatedLayout')
+  }, 'AuthenticationHeader')
   assert.ok(find(loggedIn.tree, (node) => node.type === 'header'))
   assert.ok(find(loggedIn.tree, (node) => Array.isArray(node.props?.children) && node.props.children.includes('Directory User')))
   await find(loggedIn.tree, (node) => node.type === 'button').props.onClick()
@@ -100,7 +102,7 @@ test('authenticated view displays identity and signs out to the app', async () =
   const failed = render({
     isAuthenticated: true,
     logout: async () => { throw new Error('Logout failed') },
-  }, 'AuthenticatedLayout')
+  }, 'AuthenticationHeader')
   await find(failed.tree, (node) => node.type === 'button').props.onClick()
   assert.equal(failed.actionError(), 'Logout failed')
 })

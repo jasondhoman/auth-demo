@@ -2,7 +2,7 @@ import { lazy, StrictMode, Suspense } from 'react'
 import { createRoot } from 'react-dom/client'
 import { Auth0Provider } from '@auth0/auth0-react'
 import './index.css'
-import AuthRouter from './router.tsx'
+import AuthRouter, { UnconfiguredApp } from './router.tsx'
 import { safeReturnTo } from './returnTo.ts'
 
 const domain = import.meta.env.VITE_AUTH0_DOMAIN?.trim()
@@ -31,10 +31,7 @@ createRoot(document.getElementById('root')!).render(
         <AuthRouter />
       </Auth0Provider>
     ) : (
-      <main className="auth">
-        <h1>Authentication is not configured</h1>
-        <p>Set the Auth0 domain, client ID, and connection in your local environment. See the README for setup.</p>
-      </main>
+      <UnconfiguredApp />
     )}
   </StrictMode>,
 )

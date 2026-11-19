@@ -1,7 +1,7 @@
 import { createFileRoute, redirect } from '@tanstack/react-router'
-import { Login } from '../AuthGate'
+import { Login } from '../../AuthGate'
 
-export const Route = createFileRoute('/login')({
+export const Route = createFileRoute('/_public/login')({
   validateSearch: (search: Record<string, unknown>) => ({
     redirect: typeof search.redirect === 'string' ? search.redirect : '/',
   }),

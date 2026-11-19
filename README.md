@@ -32,13 +32,17 @@ pnpm install
 pnpm dev
 ```
 
-Open the origin Vite prints. The app should show a sign-in button; after successful AD login, it shows the starter app and user identity. Sign out returns to the app. Check an invalid AD login and verify that users cannot sign in using another connection. An authentication or configuration error is shown instead of the app.
+Open the origin Vite prints and sign in to access the home page, dashboard, reports, and account pages. Dashboard and reports display sample data; after successful AD login, the account page shows the user's identity. Sign out returns to sign-in. Check an invalid AD login and verify that users cannot sign in using another connection. Authentication and configuration errors are shown to the user.
 
 Run `pnpm test`, `pnpm build`, and `pnpm lint` for local checks. A complete login test requires a configured Auth0 tenant and a working AD/LDAP connector.
 
 ## Routes
 
-TanStack Router generates `src/routeTree.gen.ts` from the route files in `src/routes/` when Vite starts or builds. `/login` is public; `_authenticated.tsx` is a pathless layout whose `beforeLoad` guard redirects signed-out visitors to login and returns them to the requested route after authentication. Add protected pages under the `_authenticated` layout (for example, `_authenticated.settings.tsx`). Configure the production host to serve `index.html` for SPA routes.
+TanStack Router generates `src/routeTree.gen.ts` from the route files in `src/routes/` when Vite starts or builds. Public pages live under `_public/`, and protected pages live under `_authenticated/`. These pathless layout folder names do not appear in URLs.
+
+The `_authenticated/route.tsx` layout guards its children, redirecting signed-out visitors to login and returning them to the requested route afterward. Add public pages under `_public/` and protected pages under `_authenticated/` (for example, `_authenticated/settings.tsx`). Lint enforces this folder placement; run the tests too to check generated layout ancestry. Configure the production host to serve `index.html` for SPA routes.
+
+The dashboard links to sample todos at `/dashboard/todos/$todoId` (for example, `/dashboard/todos/1`). These are static sample data, not a backend; unknown IDs show a not-found page.
 
 ## Local mock authentication
 

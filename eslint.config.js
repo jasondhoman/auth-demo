@@ -19,4 +19,28 @@ export default defineConfig([
       globals: globals.browser,
     },
   },
+  {
+    files: ['src/routes/**/*.{ts,tsx}'],
+    ignores: [
+      'src/routes/__root.tsx',
+      'src/routes/_public/**',
+      'src/routes/_authenticated/**',
+    ],
+    plugins: {
+      routes: {
+        rules: {
+          'require-layout-folder': {
+            create(context) {
+              return {
+                Program(node) {
+                  context.report({ node, message: 'Put routes in _public/ or _authenticated/.' })
+                },
+              }
+            },
+          },
+        },
+      },
+    },
+    rules: { 'routes/require-layout-folder': 'error' },
+  },
 ])

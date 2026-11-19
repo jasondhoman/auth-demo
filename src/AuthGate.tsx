@@ -1,5 +1,5 @@
 import { useAuth0 } from '@auth0/auth0-react'
-import { Outlet } from '@tanstack/react-router'
+import { Link, Outlet } from '@tanstack/react-router'
 import { lazy, Suspense, useState } from 'react'
 import { safeReturnTo } from './returnTo'
 
@@ -39,8 +39,8 @@ export function Login({ returnTo, connection }: { returnTo: unknown; connection:
   )
 }
 
-export function AuthenticatedLayout() {
-  const { isAuthenticated, logout, user } = useAuth0()
+export function AuthenticationHeader() {
+  const { isAuthenticated, logout, user, error } = useAuth0()
   const [actionError, setActionError] = useState<string>()
 
   async function signOut() {
@@ -52,16 +52,36 @@ export function AuthenticatedLayout() {
     }
   }
 
+  return (
+    <header className="auth-header">
+      <nav aria-label="Main navigation">
+        <Link to="/">Home</Link>
+        <Link to="/dashboard">Dashboard</Link>
+        <Link to="/reports">Reports</Link>
+        <Link to="/account">Account</Link>
+      </nav>
+      {isAuthenticated ? (
+        <>
+          <span>Signed in as {user?.name || user?.email || user?.sub || 'user'}</span>
+          {import.meta.env.DEV && import.meta.env.VITE_MOCK_AUTH === 'true' && <span> (mock)</span>}
+          <button type="button" className="counter" onClick={signOut}>Sign out</button>
+        </>
+      ) : (
+        <Link to="/login" search={{ redirect: '/' }}>Sign in</Link>
+      )}
+      {(actionError || error) && <p role="alert">{actionError || error?.message}</p>}
+    </header>
+  )
+}
+
+export function AuthenticatedLayout() {
+  const { isAuthenticated } = useAuth0()
+
   if (!isAuthenticated) return null
 
   return (
     <>
-      <header className="auth-header">
-        <span>Signed in as {user?.name || user?.email || user?.sub || 'user'}</span>
-        {import.meta.env.DEV && import.meta.env.VITE_MOCK_AUTH === 'true' && <span> (mock)</span>}
-        <button type="button" className="counter" onClick={signOut}>Sign out</button>
-        {actionError && <p role="alert">{actionError}</p>}
-      </header>
+      <AuthenticationHeader />
       <Outlet />
     </>
   )
